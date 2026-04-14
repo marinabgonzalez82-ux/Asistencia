@@ -1,0 +1,1011 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AsistencIA — Posgrado</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;500;600&display=swap');
+:root {
+  --ink:#0f0e0c;--paper:#f5f0e8;--cream:#ede7d5;--accent:#c8410a;
+  --muted:#7a7060;--border:#d4c9b0;--success:#2d6a4f;--sucbg:#b7e4c7;--card:#faf7f1;
+  --danger:#dc2626;--dangerbg:#fee2e2;--warn:#92400e;--warnbg:#fef3c7;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'DM Sans',sans-serif;background:var(--paper);color:var(--ink);min-height:100vh;}
+
+/* ── HEADER ── */
+header{background:var(--ink);color:var(--paper);padding:14px 28px;display:flex;align-items:center;gap:12px;border-bottom:3px solid var(--accent);}
+.logo{width:32px;height:32px;background:var(--accent);border-radius:6px;display:flex;align-items:center;justify-content:center;font-family:'DM Serif Display',serif;font-size:16px;color:white;}
+header h1{font-family:'DM Serif Display',serif;font-size:18px;font-weight:400;}
+header small{font-family:'DM Mono',monospace;font-size:10px;color:#f0c4aa;letter-spacing:.1em;text-transform:uppercase;}
+#prof-nav{margin-left:auto;display:flex;gap:6px;align-items:center;}
+.nb{background:transparent;border:1px solid rgba(255,255,255,.25);color:var(--paper);padding:6px 14px;border-radius:4px;cursor:pointer;font-family:'DM Sans',sans-serif;font-size:13px;}
+.nb:hover,.nb.on{background:var(--accent);border-color:var(--accent);}
+.role-badge{font-family:'DM Mono',monospace;font-size:10px;padding:3px 8px;border-radius:12px;background:rgba(255,255,255,.15);color:#f0c4aa;letter-spacing:.05em;}
+.logout-btn{background:transparent;border:1px solid rgba(255,255,255,.2);color:rgba(255,255,255,.6);padding:5px 10px;border-radius:4px;cursor:pointer;font-size:12px;}
+.logout-btn:hover{border-color:var(--accent);color:var(--paper);}
+
+/* ── PAGES ── */
+.page{display:none;max-width:1040px;margin:0 auto;padding:30px 22px;}
+.page.on{display:block;}
+#page-student{display:none;min-height:calc(100vh - 62px);align-items:center;justify-content:center;padding:30px 16px;max-width:100%;}
+#page-student.on{display:flex;flex-direction:column;}
+h2.pt{font-family:'DM Serif Display',serif;font-size:24px;font-weight:400;margin-bottom:4px;}
+p.ps{color:var(--muted);font-size:13px;margin-bottom:24px;}
+
+/* ── LOGIN MODAL ── */
+.modal-overlay{position:fixed;inset:0;background:rgba(15,14,12,.7);display:flex;align-items:center;justify-content:center;z-index:1000;padding:16px;backdrop-filter:blur(4px);}
+.modal-overlay.hidden{display:none;}
+.modal-box{background:var(--card);border:1.5px solid var(--border);border-radius:16px;padding:32px 28px;width:100%;max-width:380px;box-shadow:0 20px 60px rgba(0,0,0,.2);}
+.modal-box h3{font-family:'DM Serif Display',serif;font-size:22px;font-weight:400;margin-bottom:6px;}
+.modal-box p{font-size:13px;color:var(--muted);margin-bottom:22px;line-height:1.5;}
+.pin-field{display:flex;gap:8px;margin-bottom:16px;}
+.pin-field input{flex:1;padding:12px;border:1.5px solid var(--border);border-radius:8px;font-family:'DM Mono',monospace;font-size:20px;text-align:center;letter-spacing:.2em;background:var(--paper);color:var(--ink);outline:none;}
+.pin-field input:focus{border-color:var(--accent);}
+.pin-field input.err{border-color:var(--danger);animation:shake .3s ease;}
+@keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
+.pin-error{font-size:12px;color:var(--danger);margin-bottom:12px;display:none;min-height:16px;}
+.pin-error.on{display:block;}
+.modal-roles{display:flex;gap:8px;margin-bottom:20px;flex-wrap:wrap;}
+.role-btn{flex:1;padding:10px;border:1.5px solid var(--border);border-radius:8px;cursor:pointer;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:500;background:var(--paper);color:var(--ink);transition:all .15s;text-align:center;min-width:100px;}
+.role-btn:hover{border-color:var(--accent);}
+.role-btn.sel{border-color:var(--accent);background:var(--accent);color:white;}
+.modal-btn{width:100%;padding:13px;border:none;border-radius:8px;cursor:pointer;font-family:'DM Sans',sans-serif;font-size:15px;font-weight:600;background:var(--accent);color:white;transition:opacity .15s;}
+.modal-btn:hover{opacity:.88;}
+.modal-btn:disabled{opacity:.5;cursor:not-allowed;}
+
+/* ── CARDS ── */
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:12px;margin-bottom:28px;}
+.card{background:var(--card);border:1.5px solid var(--border);border-radius:10px;overflow:hidden;cursor:pointer;transition:transform .15s,box-shadow .15s;}
+.card:hover{transform:translateY(-2px);box-shadow:0 4px 14px rgba(0,0,0,.1);}
+.card.sel{border-width:2px;}
+.cbar{height:5px;}.cbody{padding:15px;}
+.ccode{font-family:'DM Mono',monospace;font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.1em;margin-bottom:4px;}
+.cname{font-size:14px;font-weight:600;margin-bottom:10px;line-height:1.3;}
+.cstats{display:flex;gap:14px;}
+.cstat{font-size:11px;color:var(--muted);}
+.cstat strong{display:block;font-size:18px;color:var(--ink);font-weight:600;}
+
+/* ── QR PANEL ── */
+.qrpanel{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:24px;display:none;margin-bottom:28px;}
+.qrpanel.on{display:block;}
+.qrhead{display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:20px;}
+.qrtitle{font-family:'DM Serif Display',serif;font-size:19px;}
+.qrsub{color:var(--muted);font-size:13px;margin-top:3px;}
+.qrctrl{display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end;}
+.ig{display:flex;flex-direction:column;gap:3px;}
+.ig label{font-size:11px;color:var(--muted);font-weight:500;text-transform:uppercase;letter-spacing:.05em;}
+.ig input{background:var(--paper);border:1px solid var(--border);border-radius:6px;padding:8px 9px;font-family:'DM Sans',sans-serif;font-size:14px;color:var(--ink);outline:none;}
+.ig input:focus{border-color:var(--accent);}
+.qrbody{display:flex;gap:24px;flex-wrap:wrap;align-items:flex-start;}
+.qrbox{background:white;border:2px solid var(--border);border-radius:10px;padding:18px;text-align:center;flex-shrink:0;}
+#qr-canvas{width:200px;height:200px;display:flex;align-items:center;justify-content:center;margin:0 auto 8px;}
+.qrlbl{font-family:'DM Mono',monospace;font-size:11px;color:var(--muted);}
+.qrstamp{display:inline-block;margin-top:5px;border-radius:4px;padding:2px 9px;font-size:12px;font-weight:600;color:white;}
+.qrinfo{flex:1;min-width:200px;}
+.qrnote{background:#e8f4fd;border:1px solid #bee3f8;border-radius:8px;padding:13px;font-size:13px;color:#1a4e79;line-height:1.6;margin-bottom:12px;}
+.urlbox{background:var(--paper);border:1px solid var(--border);border-radius:8px;padding:11px 13px;margin-bottom:12px;cursor:pointer;}
+.urllbl{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.1em;margin-bottom:4px;}
+.urlval{font-family:'DM Mono',monospace;font-size:11px;color:var(--accent);word-break:break-all;}
+.qracts{display:flex;gap:8px;flex-wrap:wrap;}
+
+/* ── BUTTONS ── */
+.btn{padding:9px 18px;border-radius:6px;border:none;cursor:pointer;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:500;transition:opacity .15s;}
+.btn:hover{opacity:.85;}
+.btnp{background:var(--accent);color:white;}
+.btns{background:var(--cream);color:var(--ink);border:1px solid var(--border);}
+.btng{background:var(--success);color:white;}
+.btnd{background:var(--dangerbg);color:var(--danger);border:1px solid #fca5a5;}
+
+/* ── TABLE ── */
+.thead{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:12px;}
+.thead h3{font-family:'DM Serif Display',serif;font-size:19px;font-weight:400;}
+.frow{display:flex;gap:7px;flex-wrap:wrap;align-items:center;}
+select.fsel{background:var(--card);border:1px solid var(--border);border-radius:6px;padding:6px 9px;font-family:'DM Sans',sans-serif;font-size:13px;color:var(--ink);cursor:pointer;outline:none;}
+table{width:100%;border-collapse:collapse;background:var(--card);border-radius:10px;overflow:hidden;border:1px solid var(--border);font-size:14px;}
+th{background:var(--ink);color:var(--paper);padding:10px 13px;text-align:left;font-size:11px;text-transform:uppercase;letter-spacing:.05em;font-weight:500;}
+td{padding:10px 13px;border-bottom:1px solid var(--border);}
+tr:last-child td{border-bottom:none;}
+tr:hover td{background:var(--cream);}
+.tag{display:inline-block;padding:2px 8px;border-radius:12px;font-size:11px;font-weight:600;}
+.tagok{background:var(--sucbg);color:var(--success);}
+.tagerr{background:var(--dangerbg);color:var(--danger);}
+.tagwarn{background:var(--warnbg);color:var(--warn);}
+.empty{text-align:center;padding:48px 20px;color:var(--muted);font-size:15px;line-height:1.8;}
+
+/* ── LOG ── */
+.log-wrap{margin-top:28px;}
+.log-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;}
+.log-head h3{font-family:'DM Serif Display',serif;font-size:17px;font-weight:400;}
+.log-entry{display:flex;align-items:flex-start;gap:10px;padding:9px 13px;border-bottom:1px solid var(--border);font-size:13px;}
+.log-entry:last-child{border-bottom:none;}
+.log-icon{font-size:14px;flex-shrink:0;margin-top:1px;}
+.log-msg{flex:1;line-height:1.4;}
+.log-time{font-family:'DM Mono',monospace;font-size:10px;color:var(--muted);flex-shrink:0;}
+.log-box{background:var(--card);border:1px solid var(--border);border-radius:10px;overflow:hidden;max-height:320px;overflow-y:auto;}
+
+/* ── MANAGE ── */
+.mgrid{display:grid;grid-template-columns:1fr 1fr;gap:18px;}
+@media(max-width:660px){.mgrid{grid-template-columns:1fr;}}
+.mcard{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:20px;}
+.mcard h3{font-size:15px;font-weight:600;margin-bottom:4px;}
+.mcard>p{font-size:13px;color:var(--muted);margin-bottom:14px;}
+.erow{display:grid;grid-template-columns:68px 1fr 34px 30px;gap:7px;align-items:center;margin-bottom:8px;}
+.erow input{padding:7px 8px;border:1px solid var(--border);border-radius:6px;font-family:'DM Sans',sans-serif;font-size:13px;background:var(--paper);color:var(--ink);width:100%;outline:none;}
+.erow input:focus{border-color:var(--accent);}
+.cpick{width:34px;height:30px;border:1px solid var(--border);border-radius:6px;cursor:pointer;padding:2px;}
+.bx{width:30px;height:30px;border:1px solid var(--border);background:var(--paper);border-radius:6px;cursor:pointer;font-size:13px;display:flex;align-items:center;justify-content:center;}
+.bx:hover{background:#fee2e2;}
+.xrow{display:flex;align-items:center;justify-content:space-between;padding:9px 0;border-bottom:1px solid var(--border);}
+.xrow:last-child{border-bottom:none;}
+.xl{display:flex;align-items:center;gap:8px;}
+.dot{width:8px;height:8px;border-radius:50%;}
+.xn{font-weight:500;font-size:13px;}.xc{font-size:11px;color:var(--muted);}
+
+/* ── PIN MANAGEMENT ── */
+.pin-row{display:flex;gap:8px;align-items:center;margin-bottom:8px;padding:10px;background:var(--paper);border:1px solid var(--border);border-radius:8px;}
+.pin-row-info{flex:1;}
+.pin-row-name{font-size:13px;font-weight:600;}
+.pin-row-role{font-size:11px;color:var(--muted);}
+.pin-row input{width:90px;padding:6px 8px;border:1px solid var(--border);border-radius:6px;font-family:'DM Mono',monospace;font-size:14px;text-align:center;background:white;outline:none;}
+.pin-row input:focus{border-color:var(--accent);}
+
+/* ── STUDENT ── */
+.scard{background:var(--card);border:1px solid var(--border);border-radius:18px;padding:32px 28px;width:100%;max-width:400px;box-shadow:0 8px 36px rgba(0,0,0,.09);}
+.stop{text-align:center;margin-bottom:22px;}
+.sbadge{display:inline-block;padding:5px 18px;border-radius:30px;font-size:13px;font-weight:600;color:white;margin-bottom:12px;}
+.scard h2{font-family:'DM Serif Display',serif;font-size:21px;font-weight:400;line-height:1.3;margin-bottom:5px;}
+.sinfo{font-size:13px;color:var(--muted);}
+hr.sdv{border:none;border-top:1px solid var(--border);margin:18px 0;}
+.sf label{display:block;font-size:12px;font-weight:500;color:var(--muted);margin-bottom:6px;text-transform:uppercase;letter-spacing:.05em;}
+.sf input{width:100%;background:var(--paper);border:1.5px solid var(--border);border-radius:10px;padding:13px 14px;font-family:'DM Sans',sans-serif;font-size:16px;color:var(--ink);outline:none;-webkit-appearance:none;margin-bottom:4px;}
+.sf input:focus{border-color:var(--accent);}
+.sf input.ferr{border-color:var(--danger);}
+.errmsg{font-size:12px;color:var(--danger);display:none;margin-bottom:12px;}
+.errmsg.on{display:block;}
+.ssub{width:100%;padding:14px;border-radius:10px;border:none;cursor:pointer;font-family:'DM Sans',sans-serif;font-size:16px;font-weight:600;color:white;margin-top:4px;}
+.snote{text-align:center;margin-top:12px;font-size:12px;color:var(--muted);}
+
+/* ── STUDENT ERROR BANNER ── */
+.student-error{background:var(--dangerbg);border:1.5px solid #fca5a5;border-radius:10px;padding:16px;margin-top:14px;text-align:center;display:none;}
+.student-error.on{display:block;}
+.student-error h4{color:var(--danger);font-size:14px;margin-bottom:6px;}
+.student-error p{font-size:12px;color:#7f1d1d;line-height:1.5;}
+.retry-btn{margin-top:10px;padding:8px 18px;background:var(--danger);color:white;border:none;border-radius:6px;cursor:pointer;font-size:13px;font-weight:600;}
+
+.sok{text-align:center;display:none;}
+.sok.on{display:block;}
+.chk{width:74px;height:74px;background:var(--sucbg);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:36px;margin:0 auto 18px;animation:pop .5s ease;}
+@keyframes pop{0%{transform:scale(0)}70%{transform:scale(1.15)}100%{transform:scale(1)}}
+.sok h3{font-family:'DM Serif Display',serif;font-size:23px;font-weight:400;margin-bottom:8px;}
+.sok .det{font-size:14px;color:var(--muted);line-height:1.6;}
+.sbad{text-align:center;display:none;}
+.sbad.on{display:block;}
+.sfooter{margin-top:18px;font-size:11px;color:var(--border);text-transform:uppercase;letter-spacing:.08em;}
+.loading{display:flex;align-items:center;gap:10px;font-size:13px;color:var(--muted);padding:16px 0;}
+.spinner{width:18px;height:18px;border:2px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .7s linear infinite;flex-shrink:0;}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* ── TOAST ── */
+.toast{position:fixed;bottom:20px;right:20px;padding:10px 16px;border-radius:8px;font-size:13px;opacity:0;transform:translateY(8px);transition:all .3s;z-index:9999;pointer-events:none;max-width:300px;}
+.toast.on{opacity:1;transform:translateY(0);}
+.toast.ok{background:var(--ink);color:var(--paper);}
+.toast.err{background:var(--danger);color:white;}
+
+/* ── PRINT ── */
+@media print{
+  header,#prof-nav,.qrctrl,.qrinfo,.qracts,.grid,#tbl-section,#page-manage,.nb,.log-wrap{display:none!important;}
+  .qrpanel{display:block!important;border:none;padding:0;}
+  .qrbody{justify-content:center;}
+  .qrbox{border:2px solid #000;padding:24px;}
+  body{background:white;}
+  .po{display:block!important;text-align:center;margin-bottom:16px;}
+  .pi{display:block!important;text-align:center;margin-top:18px;font-size:14px;color:#444;border:1px dashed #999;border-radius:6px;padding:12px;}
+}
+.po{display:none;}.po h2{font-family:serif;font-size:20px;margin-bottom:4px;}.po p{font-size:13px;color:#555;}
+.pi{display:none;}
+
+@media(max-width:580px){
+  header{padding:12px 14px;}header h1{font-size:16px;}
+  .page{padding:20px 14px;}
+  .grid{grid-template-columns:1fr 1fr;}
+  .qrbody{flex-direction:column;}
+  .scard{padding:24px 16px;}
+}
+</style>
+</head>
+<body>
+
+<!-- LOGIN MODAL -->
+<div class="modal-overlay" id="login-modal">
+  <div class="modal-box">
+    <h3>Acceder al panel</h3>
+    <p>Seleccioná tu rol e ingresá tu PIN para continuar.</p>
+    <div class="modal-roles">
+      <div class="role-btn sel" id="role-btn-profesor" onclick="selectRole('profesor')">👩‍🏫 Profesor</div>
+      <div class="role-btn" id="role-btn-admin" onclick="selectRole('admin')">🔐 Admin</div>
+    </div>
+    <div class="pin-field">
+      <input type="password" id="pin-input" maxlength="6" placeholder="••••" inputmode="numeric" onkeydown="if(event.key==='Enter')doLogin()">
+    </div>
+    <div class="pin-error" id="pin-error">PIN incorrecto. Intentá de nuevo.</div>
+    <button class="modal-btn" id="login-btn" onclick="doLogin()">Ingresar</button>
+  </div>
+</div>
+
+<header>
+  <div class="logo">A</div>
+  <div><h1>AsistencIA <small>Posgrado</small></h1></div>
+  <div id="prof-nav" style="display:none">
+    <span class="role-badge" id="role-display"></span>
+    <button class="nb on" onclick="goPage('prof')">📋 Asistencias</button>
+    <button class="nb" id="nav-manage" onclick="goPage('manage')" style="display:none">⚙️ Configurar</button>
+    <button class="logout-btn" onclick="doLogout()">Salir</button>
+  </div>
+</header>
+
+<!-- PROFESOR -->
+<div id="page-prof" class="page on">
+  <h2 class="pt">Panel del Profesor</h2>
+  <p class="ps">Seleccioná un curso para generar el QR de asistencia</p>
+  <div class="grid" id="course-grid"></div>
+
+  <div class="qrpanel" id="qrpanel">
+    <div class="po"><h2 id="po-title"></h2><p id="po-sub"></p></div>
+    <div class="qrhead">
+      <div>
+        <div class="qrtitle" id="qr-course-name">—</div>
+        <div class="qrsub">Generá el QR para la clase de hoy</div>
+      </div>
+      <div class="qrctrl">
+        <div class="ig"><label>N° de clase</label><input type="number" id="inp-clase" min="1" max="99" value="1" style="width:74px"></div>
+        <div class="ig"><label>Fecha</label><input type="date" id="inp-fecha"></div>
+        <button class="btn btnp" onclick="makeQR()">Generar QR</button>
+      </div>
+    </div>
+    <div class="qrbody">
+      <div class="qrbox">
+        <div id="qr-canvas"><span style="font-size:13px;color:var(--muted);line-height:1.6;text-align:center">Presioná<br>"Generar QR"</span></div>
+        <div class="qrlbl">Clase <span id="qr-num-lbl">—</span></div>
+        <div class="qrstamp" id="qr-course-stamp">—</div>
+      </div>
+      <div class="qrinfo">
+        <div class="qrnote">📱 <strong>¿Cómo funciona?</strong><br>Los alumnos escanean el QR → se abre el formulario en su celular → escriben su nombre → ¡presencia registrada en tiempo real!</div>
+        <div class="urlbox" onclick="copyUrl()">
+          <div class="urllbl">Link del formulario (clic para copiar)</div>
+          <div class="urlval" id="qr-url-display">Generá el QR primero</div>
+        </div>
+        <div class="qracts">
+          <button class="btn btns" onclick="doPrint()">🖨️ Imprimir para pegar</button>
+          <button class="btn btns" onclick="copyUrl()">📋 Copiar link</button>
+        </div>
+      </div>
+    </div>
+    <div class="pi">📱 <strong>Alumnos:</strong> Escaneá este QR con la cámara de tu celular para registrar tu asistencia.</div>
+  </div>
+
+  <div id="tbl-section">
+    <div class="thead">
+      <h3>Registro de Asistencias</h3>
+      <div class="frow">
+        <select class="fsel" id="f-course" onchange="renderTable()"><option value="">Todos los cursos</option></select>
+        <select class="fsel" id="f-class" onchange="renderTable()"><option value="">Todas las clases</option></select>
+        <button class="btn btns" onclick="reloadFromCloud()" style="font-size:12px;padding:6px 10px">↺ Actualizar</button>
+      </div>
+    </div>
+    <div id="tbl-wrap"></div>
+  </div>
+
+  <div class="log-wrap" id="log-wrap">
+    <div class="log-head">
+      <h3>Historial de eventos</h3>
+      <button class="btn btns" onclick="renderLog()" style="font-size:12px;padding:5px 10px">↺ Actualizar</button>
+    </div>
+    <div class="log-box" id="log-box">
+      <div class="empty" style="padding:24px">Cargando historial...</div>
+    </div>
+  </div>
+</div>
+
+<!-- CONFIGURAR (solo admin) -->
+<div id="page-manage" class="page">
+  <h2 class="pt">Configuración</h2>
+  <p class="ps">Solo accesible para administradores</p>
+  <div class="mgrid">
+    <div class="mcard">
+      <h3>Cursos</h3><p>Nombre, código y color</p>
+      <div id="course-edit"></div>
+      <button class="btn btns" onclick="saveCourses()" style="margin-top:8px;width:100%">💾 Guardar cambios</button>
+    </div>
+    <div class="mcard">
+      <h3>Exportar a Excel</h3><p>Planilla acumulativa por curso</p>
+      <div id="exp-wrap"></div>
+      <div style="margin-top:14px;padding-top:12px;border-top:1px solid var(--border)">
+        <button class="btn btng" onclick="exportAll()" style="width:100%">📊 Exportar todos los cursos</button>
+      </div>
+    </div>
+    <div class="mcard">
+      <h3>Gestión de PINs</h3><p>PINs de profesores y admin</p>
+      <div id="pin-manage"></div>
+      <button class="btn btns" onclick="savePins()" style="margin-top:8px;width:100%">💾 Guardar PINs</button>
+    </div>
+    <div class="mcard" style="border-color:#fca5a5">
+      <h3>⚠️ Zona de peligro</h3><p>No se puede deshacer</p>
+      <button class="btn btnd" onclick="nukeAll()">🗑️ Borrar todos los registros</button>
+    </div>
+  </div>
+</div>
+
+<!-- ALUMNO -->
+<div id="page-student" class="page">
+  <div class="scard">
+    <div id="s-form-wrap">
+      <div class="stop">
+        <div class="sbadge" id="s-badge">—</div>
+        <h2 id="s-name">—</h2>
+        <div class="sinfo" id="s-classinfo">—</div>
+      </div>
+      <hr class="sdv">
+      <div class="sf">
+        <label>Nombre y apellido completo</label>
+        <input type="text" id="s-input" placeholder="Ej: María García" autocomplete="name" autocorrect="off" spellcheck="false">
+        <div class="errmsg" id="s-errmsg">Ingresá tu nombre y apellido completo.</div>
+      </div>
+      <button class="ssub" id="s-submit-btn" onclick="submitStudent()">✓ Confirmar asistencia</button>
+      <p class="snote">Tu presencia queda registrada con fecha y hora.</p>
+
+      <div class="student-error" id="student-error">
+        <h4>❌ No se pudo registrar tu asistencia</h4>
+        <p>Hubo un problema de conexión. Tu asistencia <strong>no quedó guardada</strong>.<br>Por favor avisale a tu profesor/a y volvé a intentarlo.</p>
+        <button class="retry-btn" onclick="retryStudent()">↺ Reintentar</button>
+      </div>
+    </div>
+    <div class="sok" id="s-ok">
+      <div class="chk">✓</div>
+      <h3>¡Presencia registrada!</h3>
+      <p class="det" id="s-ok-msg">—</p>
+      <p style="margin-top:16px;font-size:12px;color:var(--border)">Podés cerrar esta ventana.</p>
+    </div>
+    <div class="sbad" id="s-bad">
+      <div style="font-size:44px;margin-bottom:14px">⚠️</div>
+      <h3 style="font-family:'DM Serif Display',serif;font-size:20px;color:var(--danger);margin-bottom:8px">QR inválido</h3>
+      <p style="font-size:13px;color:var(--muted);line-height:1.6">Este código no es válido.<br>Pedile a tu profesor que genere un nuevo QR.</p>
+    </div>
+  </div>
+  <div class="sfooter">AsistencIA · Posgrado</div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<!-- FIREBASE -->
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { getDatabase, ref, get, set, push, onValue, off } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+
+// ════════════════════════════════════════════════
+// 🔧 CONFIGURACIÓN FIREBASE — REEMPLAZAR CON TUS DATOS
+// ════════════════════════════════════════════════
+const firebaseConfig = {
+  apiKey: "AIzaSyCvPxzvbab4NtKAc9yUp6B64plv118l8n8",
+  authDomain: "asistencia-posgrado.firebaseapp.com",
+  databaseURL: "https://asistencia-posgrado-default-rtdb.firebaseio.com",
+  projectId: "asistencia-posgrado",
+  storageBucket: "asistencia-posgrado.firebasestorage.app",
+  messagingSenderId: "88888580785",
+  appId: "1:88888580785:web:817c9c870a3e7d4c4fa090"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getDatabase(app);
+
+// ════════════════════════════════════════════════
+// DATOS POR DEFECTO
+// ════════════════════════════════════════════════
+const DEFAULT_COURSES = [
+  {id:'REG1', name:'Regular 1° año', color:'#c8410a'},
+  {id:'REG2', name:'Regular 2° año', color:'#2d6a4f'},
+  {id:'INT1', name:'Intensivo 1° año', color:'#1e40af'},
+  {id:'INT2', name:'Intensivo 2° año', color:'#7c3aed'},
+];
+
+// PINs por defecto — CAMBIAR DESDE LA APP después de configurar Firebase
+const DEFAULT_PINS = {
+  admin: "1234",
+  profesores: [
+    { nombre: "Profesor 1", pin: "0001" },
+    { nombre: "Profesor 2", pin: "0002" }
+  ]
+};
+
+// ════════════════════════════════════════════════
+// ESTADO
+// ════════════════════════════════════════════════
+let appData = { courses: DEFAULT_COURSES, records: [], pins: DEFAULT_PINS };
+let selectedCourse = null;
+let studentCtx = null;
+let currentRole = null; // 'profesor' | 'admin'
+let selectedLoginRole = 'profesor';
+let liveUnsubscribe = null;
+
+// ════════════════════════════════════════════════
+// FIREBASE — LEER / ESCRIBIR
+// ════════════════════════════════════════════════
+async function fbRead(path) {
+  const snap = await get(ref(db, path));
+  return snap.exists() ? snap.val() : null;
+}
+
+async function fbWrite(path, data) {
+  await set(ref(db, path), data);
+}
+
+async function fbPush(path, data) {
+  const r = await push(ref(db, path), data);
+  return r.key;
+}
+
+// ════════════════════════════════════════════════
+// LOG DE EVENTOS
+// ════════════════════════════════════════════════
+async function logEvent(type, msg, detail) {
+  const entry = {
+    type,     // 'success' | 'error' | 'warning' | 'info'
+    msg,
+    detail: detail || '',
+    ts: new Date().toISOString(),
+    hora: new Date().toLocaleTimeString('es-AR', {hour:'2-digit',minute:'2-digit',second:'2-digit'})
+  };
+  try {
+    await fbPush('logs', entry);
+  } catch(e) {
+    console.warn('No se pudo guardar el log:', e);
+  }
+}
+
+async function renderLog() {
+  const box = document.getElementById('log-box');
+  box.innerHTML = '<div class="loading"><div class="spinner"></div>Cargando historial...</div>';
+  try {
+    const logs = await fbRead('logs');
+    if (!logs) { box.innerHTML = '<div class="empty" style="padding:20px">Sin eventos registrados.</div>'; return; }
+    const entries = Object.values(logs).sort((a,b) => new Date(b.ts) - new Date(a.ts)).slice(0, 100);
+    const icons = { success:'✅', error:'❌', warning:'⚠️', info:'ℹ️' };
+    box.innerHTML = entries.map(e => `
+      <div class="log-entry">
+        <span class="log-icon">${icons[e.type]||'•'}</span>
+        <div class="log-msg"><strong>${e.msg}</strong>${e.detail ? '<br><span style="color:var(--muted);font-size:12px">'+e.detail+'</span>' : ''}</div>
+        <span class="log-time">${e.hora || e.ts.substring(11,19)}</span>
+      </div>`).join('');
+  } catch(e) {
+    box.innerHTML = '<div class="empty" style="padding:20px;color:var(--danger)">Error al cargar el historial.</div>';
+  }
+}
+
+// ════════════════════════════════════════════════
+// LOGIN / LOGOUT
+// ════════════════════════════════════════════════
+window.selectRole = function(role) {
+  selectedLoginRole = role;
+  document.getElementById('role-btn-profesor').classList.toggle('sel', role === 'profesor');
+  document.getElementById('role-btn-admin').classList.toggle('sel', role === 'admin');
+  document.getElementById('pin-input').value = '';
+  document.getElementById('pin-error').classList.remove('on');
+};
+
+window.doLogin = async function() {
+  const pin = document.getElementById('pin-input').value.trim();
+  const inp = document.getElementById('pin-input');
+  const errEl = document.getElementById('pin-error');
+  const btn = document.getElementById('login-btn');
+
+  if (!pin) { inp.classList.add('err'); setTimeout(()=>inp.classList.remove('err'),400); return; }
+
+  btn.disabled = true;
+  btn.textContent = 'Verificando...';
+
+  try {
+    // Leer PINs desde Firebase
+    const pinsData = await fbRead('pins') || DEFAULT_PINS;
+
+    let authorized = false;
+
+    if (selectedLoginRole === 'admin' && pin === pinsData.admin) {
+      authorized = true;
+      currentRole = 'admin';
+    } else if (selectedLoginRole === 'profesor') {
+      const profesores = pinsData.profesores || DEFAULT_PINS.profesores;
+      const match = profesores.find(p => p.pin === pin);
+      if (match) {
+        authorized = true;
+        currentRole = 'profesor';
+        sessionStorage.setItem('profe_nombre', match.nombre);
+      }
+    }
+
+    if (authorized) {
+      document.getElementById('login-modal').classList.add('hidden');
+      document.getElementById('prof-nav').style.display = 'flex';
+      document.getElementById('role-display').textContent = currentRole === 'admin' ? '🔐 Admin' : '👩‍🏫 ' + (sessionStorage.getItem('profe_nombre') || 'Profesor');
+      if (currentRole === 'admin') document.getElementById('nav-manage').style.display = 'inline-block';
+      await logEvent('info', 'Inicio de sesión', (currentRole === 'admin' ? 'Admin' : sessionStorage.getItem('profe_nombre') || 'Profesor') + ' ingresó al sistema');
+      reloadFromCloud();
+      showPage('prof');
+    } else {
+      inp.classList.add('err');
+      setTimeout(() => inp.classList.remove('err'), 400);
+      errEl.classList.add('on');
+      btn.disabled = false;
+      btn.textContent = 'Ingresar';
+    }
+  } catch(e) {
+    errEl.textContent = 'Error de conexión. Revisá tu internet.';
+    errEl.classList.add('on');
+    btn.disabled = false;
+    btn.textContent = 'Ingresar';
+  }
+};
+
+window.doLogout = function() {
+  currentRole = null;
+  sessionStorage.removeItem('profe_nombre');
+  document.getElementById('prof-nav').style.display = 'none';
+  document.getElementById('nav-manage').style.display = 'none';
+  document.getElementById('pin-input').value = '';
+  document.getElementById('pin-error').classList.remove('on');
+  document.getElementById('login-modal').classList.remove('hidden');
+  if (liveUnsubscribe) { liveUnsubscribe(); liveUnsubscribe = null; }
+};
+
+// ════════════════════════════════════════════════
+// BOOT
+// ════════════════════════════════════════════════
+window.onload = function() {
+  const hash = window.location.hash;
+  if (hash && hash.indexOf('#qr=') === 0) {
+    document.getElementById('login-modal').classList.add('hidden');
+    document.getElementById('prof-nav').style.display = 'none';
+    document.querySelectorAll('.page').forEach(p => p.classList.remove('on'));
+    const sp = document.getElementById('page-student');
+    sp.classList.add('on');
+    sp.style.display = 'flex';
+    loadStudentForm(hash.substring(4));
+  } else {
+    // Mostrar modal de login
+    document.getElementById('inp-fecha').value = today();
+  }
+};
+
+// ════════════════════════════════════════════════
+// DATOS DESDE FIREBASE
+// ════════════════════════════════════════════════
+window.reloadFromCloud = async function() {
+  const wrap = document.getElementById('tbl-wrap');
+  wrap.innerHTML = '<div class="loading"><div class="spinner"></div>Cargando asistencias...</div>';
+  try {
+    const [courses, records] = await Promise.all([
+      fbRead('courses'),
+      fbRead('records')
+    ]);
+    appData.courses = courses || DEFAULT_COURSES;
+    appData.records = records ? Object.values(records) : [];
+    renderCards();
+    renderTable();
+    renderFilters();
+    renderLog();
+
+    // Live updates para la tabla
+    if (liveUnsubscribe) liveUnsubscribe();
+    const recRef = ref(db, 'records');
+    const listener = onValue(recRef, snap => {
+      appData.records = snap.exists() ? Object.values(snap.val()) : [];
+      renderCards();
+      renderTable();
+    });
+    liveUnsubscribe = () => off(recRef, 'value', listener);
+  } catch(e) {
+    wrap.innerHTML = '<div class="empty" style="color:var(--danger)">❌ Error al conectar con Firebase.<br>Revisá la configuración.</div>';
+  }
+};
+
+// ════════════════════════════════════════════════
+// PAGES
+// ════════════════════════════════════════════════
+window.goPage = function(name) { showPage(name); };
+function showPage(name) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('on'));
+  document.querySelectorAll('.nb').forEach(b => b.classList.remove('on'));
+  document.getElementById('page-' + name).classList.add('on');
+  const btn = document.querySelector('[onclick="goPage(\'' + name + '\')"]');
+  if (btn) btn.classList.add('on');
+  if (name === 'prof') { renderCards(); renderTable(); renderFilters(); renderLog(); }
+  if (name === 'manage') { renderEditList(); renderExpList(); renderPinManage(); }
+}
+
+// ════════════════════════════════════════════════
+// COURSE CARDS
+// ════════════════════════════════════════════════
+function renderCards() {
+  let html = '';
+  appData.courses.forEach(m => {
+    const recs = appData.records.filter(r => r.courseId === m.id);
+    const cls = {};
+    recs.forEach(r => cls[r.classNum] = 1);
+    const sel = selectedCourse === m.id;
+    html += `<div class="card${sel?' sel':''}"${sel?' style="border-color:'+m.color+';box-shadow:0 0 0 2px '+m.color+'"':''} onclick="selectCourse('${m.id}')">
+      <div class="cbar" style="background:${m.color}"></div>
+      <div class="cbody"><div class="ccode">${m.id}</div><div class="cname">${m.name}</div>
+      <div class="cstats"><div class="cstat"><strong>${Object.keys(cls).length}</strong>clases</div>
+      <div class="cstat"><strong>${recs.length}</strong>asistencias</div></div></div></div>`;
+  });
+  document.getElementById('course-grid').innerHTML = html;
+}
+
+window.selectCourse = function(id) {
+  selectedCourse = id;
+  renderCards();
+  const m = appData.courses.find(c => c.id === id);
+  document.getElementById('qr-course-name').textContent = m.name;
+  document.getElementById('qr-course-stamp').textContent = m.id;
+  document.getElementById('qr-course-stamp').style.background = m.color;
+  document.getElementById('qrpanel').classList.add('on');
+  document.getElementById('po-title').textContent = m.name;
+  const nums = appData.records.filter(r => r.courseId === id).map(r => r.classNum || 0);
+  document.getElementById('inp-clase').value = (nums.length ? Math.max(...nums) : 0) + 1;
+  document.getElementById('inp-fecha').value = today();
+  document.getElementById('qr-canvas').innerHTML = '<span style="font-size:13px;color:var(--muted);line-height:1.6;text-align:center">Presioná<br>"Generar QR"</span>';
+  document.getElementById('qr-num-lbl').textContent = '—';
+  document.getElementById('qr-url-display').textContent = 'Generá el QR primero';
+};
+
+// ════════════════════════════════════════════════
+// QR
+// ════════════════════════════════════════════════
+window.makeQR = function() {
+  if (!selectedCourse) { showToast('Seleccioná un curso primero', 'err'); return; }
+  const classNum = parseInt(document.getElementById('inp-clase').value) || 1;
+  const fecha = document.getElementById('inp-fecha').value || today();
+  const m = appData.courses.find(c => c.id === selectedCourse);
+  const data = { cId:m.id, cName:m.name, cColor:m.color, num:classNum, date:fecha };
+  const payload = btoa(encodeURIComponent(JSON.stringify(data)));
+  const url = window.location.href.split('#')[0] + '#qr=' + payload;
+  const canvas = document.getElementById('qr-canvas');
+  canvas.innerHTML = '';
+  new QRCode(canvas, {text:url, width:200, height:200, colorDark:'#0f0e0c', colorLight:'#ffffff', correctLevel:QRCode.CorrectLevel.M});
+  document.getElementById('qr-num-lbl').textContent = classNum;
+  document.getElementById('qr-url-display').textContent = url;
+  document.getElementById('po-sub').textContent = 'Clase ' + classNum + ' — ' + fecha;
+  showToast('QR generado ✓ Clase ' + classNum, 'ok');
+};
+
+window.copyUrl = function() {
+  const url = document.getElementById('qr-url-display').textContent;
+  if (url.indexOf('Generá') >= 0) { showToast('Primero generá el QR', 'err'); return; }
+  navigator.clipboard.writeText(url).then(() => showToast('Link copiado ✓', 'ok')).catch(() => showToast('No se pudo copiar', 'err'));
+};
+
+window.doPrint = function() {
+  if (!document.getElementById('qr-canvas').querySelector('canvas,img')) { showToast('Primero generá el QR', 'err'); return; }
+  window.print();
+};
+
+// ════════════════════════════════════════════════
+// TABLE
+// ════════════════════════════════════════════════
+function renderFilters() {
+  const fm = document.getElementById('f-course'), fc = document.getElementById('f-class');
+  const sm = fm.value, sc = fc.value;
+  let co = '<option value="">Todos los cursos</option>';
+  appData.courses.forEach(m => { co += `<option value="${m.id}"${sm===m.id?' selected':''}>${m.id} — ${m.name}</option>`; });
+  fm.innerHTML = co;
+  const nums = {};
+  appData.records.forEach(r => nums[r.classNum] = 1);
+  let no = '<option value="">Todas las clases</option>';
+  Object.keys(nums).map(Number).sort((a,b)=>a-b).forEach(n => { no += `<option value="${n}"${sc==n?' selected':''}>Clase ${n}</option>`; });
+  fc.innerHTML = no;
+}
+
+window.renderTable = function() {
+  renderFilters();
+  const fm = document.getElementById('f-course').value, fc = document.getElementById('f-class').value;
+  let rows = appData.records.slice();
+  if (fm) rows = rows.filter(r => r.courseId === fm);
+  if (fc) rows = rows.filter(r => r.classNum == fc);
+  rows.sort((a,b) => new Date(b.ts) - new Date(a.ts));
+  const wrap = document.getElementById('tbl-wrap');
+  if (!rows.length) { wrap.innerHTML = '<div class="empty">📋<br><br>No hay asistencias todavía.<br>Generá un QR y compartilo con tus alumnos.</div>'; return; }
+  let html = '<table><thead><tr><th>Curso</th><th>Clase</th><th>Fecha</th><th>Nombre y Apellido</th><th>Hora</th><th>Estado</th></tr></thead><tbody>';
+  rows.forEach(r => {
+    const m = appData.courses.find(c => c.id === r.courseId) || {color:'#999'};
+    html += `<tr><td><span class="tag" style="background:${m.color}22;color:${m.color};font-family:monospace">${r.courseId}</span></td>
+      <td style="font-family:monospace;font-size:13px">Clase ${r.classNum}</td>
+      <td style="font-size:13px">${r.date||'—'}</td>
+      <td style="font-weight:500">${r.name}</td>
+      <td style="font-size:13px;color:var(--muted)">${r.hora||'—'}</td>
+      <td><span class="tag tagok">Presente</span></td></tr>`;
+  });
+  html += '</tbody></table>';
+  wrap.innerHTML = html;
+};
+
+// ════════════════════════════════════════════════
+// MANAGE — CURSOS
+// ════════════════════════════════════════════════
+function renderEditList() {
+  let html = '';
+  appData.courses.forEach((m,i) => {
+    html += `<div class="erow"><input type="text" id="ei${i}" value="${m.id}" maxlength="10"><input type="text" id="en${i}" value="${m.name}"><input type="color" id="ec${i}" value="${m.color}" class="cpick"><button class="bx" onclick="delCourse(${i})">✕</button></div>`;
+  });
+  html += '<button class="btn btns" onclick="addCourse()" style="width:100%;margin-top:6px">+ Agregar curso</button>';
+  document.getElementById('course-edit').innerHTML = html;
+}
+
+window.saveCourses = async function() {
+  appData.courses.forEach((m,i) => {
+    const ei=document.getElementById('ei'+i), en=document.getElementById('en'+i), ec=document.getElementById('ec'+i);
+    if(ei) m.id=ei.value.trim()||m.id;
+    if(en) m.name=en.value.trim()||m.name;
+    if(ec) m.color=ec.value||m.color;
+  });
+  try {
+    await fbWrite('courses', appData.courses);
+    showToast('Cursos guardados ✓', 'ok');
+    await logEvent('info', 'Cursos actualizados', 'Admin modificó la lista de cursos');
+    renderEditList(); renderExpList();
+  } catch(e) {
+    showToast('Error al guardar', 'err');
+  }
+};
+
+window.addCourse = function() {
+  appData.courses.push({id:'CUR'+(appData.courses.length+1), name:'Nuevo Curso', color:'#64748b'});
+  renderEditList();
+};
+
+window.delCourse = function(i) {
+  if (!confirm('¿Eliminar este curso?')) return;
+  appData.courses.splice(i,1);
+  renderEditList(); renderExpList();
+};
+
+// ════════════════════════════════════════════════
+// MANAGE — PINs
+// ════════════════════════════════════════════════
+function renderPinManage() {
+  const pinsData = appData.pins || DEFAULT_PINS;
+  let html = `<div class="pin-row"><div class="pin-row-info"><div class="pin-row-name">🔐 Admin</div><div class="pin-row-role">Acceso total al sistema</div></div><input type="text" id="pin-admin" value="${pinsData.admin}" maxlength="6" placeholder="PIN"></div>`;
+  html += '<div style="font-size:11px;color:var(--muted);margin:10px 0 8px">Profesores:</div>';
+  const profesores = pinsData.profesores || DEFAULT_PINS.profesores;
+  profesores.forEach((p,i) => {
+    html += `<div class="pin-row"><div class="pin-row-info"><input type="text" id="pname${i}" value="${p.nombre}" placeholder="Nombre del profesor" style="border:none;background:transparent;font-size:13px;font-weight:600;padding:0;width:100%"><div class="pin-row-role">Profesor</div></div><input type="text" id="ppin${i}" value="${p.pin}" maxlength="6" placeholder="PIN"><button class="bx" onclick="delProfe(${i})" style="margin-left:4px">✕</button></div>`;
+  });
+  html += `<button class="btn btns" onclick="addProfe()" style="width:100%;margin-top:8px;font-size:13px">+ Agregar profesor</button>`;
+  document.getElementById('pin-manage').innerHTML = html;
+}
+
+window.addProfe = function() {
+  const pinsData = appData.pins || DEFAULT_PINS;
+  if (!pinsData.profesores) pinsData.profesores = [];
+  pinsData.profesores.push({ nombre: 'Nuevo Profesor', pin: '0000' });
+  appData.pins = pinsData;
+  renderPinManage();
+};
+
+window.delProfe = function(i) {
+  if (!confirm('¿Eliminar este profesor?')) return;
+  const pinsData = appData.pins || DEFAULT_PINS;
+  pinsData.profesores.splice(i,1);
+  appData.pins = pinsData;
+  renderPinManage();
+};
+
+window.savePins = async function() {
+  const adminPin = document.getElementById('pin-admin').value.trim();
+  const pinsData = appData.pins || DEFAULT_PINS;
+  const profesores = pinsData.profesores || [];
+  const updated = profesores.map((p,i) => ({
+    nombre: document.getElementById('pname'+i)?.value.trim() || p.nombre,
+    pin: document.getElementById('ppin'+i)?.value.trim() || p.pin
+  }));
+  const newPins = { admin: adminPin || pinsData.admin, profesores: updated };
+  try {
+    await fbWrite('pins', newPins);
+    appData.pins = newPins;
+    showToast('PINs guardados ✓', 'ok');
+    await logEvent('info', 'PINs actualizados', 'Admin modificó los PINs del sistema');
+  } catch(e) {
+    showToast('Error al guardar PINs', 'err');
+  }
+};
+
+// ════════════════════════════════════════════════
+// MANAGE — EXPORT / NUKE
+// ════════════════════════════════════════════════
+function renderExpList() {
+  let html = '';
+  appData.courses.forEach(m => {
+    const cnt = appData.records.filter(r => r.courseId === m.id).length;
+    html += `<div class="xrow"><div class="xl"><div class="dot" style="background:${m.color}"></div><div><div class="xn">${m.name}</div><div class="xc">${cnt} registro${cnt!==1?'s':''}</div></div></div>
+      <button class="btn btns" onclick="exportOne('${m.id}')" style="font-size:12px;padding:5px 9px">⬇ Excel</button></div>`;
+  });
+  document.getElementById('exp-wrap').innerHTML = html;
+}
+
+window.nukeAll = async function() {
+  if (!confirm('¿Borrar TODOS los registros? No se puede deshacer.')) return;
+  try {
+    await fbWrite('records', null);
+    appData.records = [];
+    await logEvent('warning', 'Registros borrados', 'Admin eliminó todos los registros del sistema');
+    showToast('Registros borrados', 'ok');
+    renderTable(); renderCards(); renderExpList();
+  } catch(e) {
+    showToast('Error al borrar', 'err');
+  }
+};
+
+window.exportOne = function(courseId) {
+  const m = appData.courses.find(c => c.id === courseId);
+  if (!m) return;
+  doExport([m], {[courseId]: appData.records.filter(r => r.courseId === courseId)});
+  showToast('Descargando Excel de '+m.name+'...', 'ok');
+};
+
+window.exportAll = function() {
+  const g = {};
+  appData.courses.forEach(m => { g[m.id] = appData.records.filter(r => r.courseId === m.id); });
+  doExport(appData.courses, g);
+  showToast('Descargando todos los cursos...', 'ok');
+};
+
+function doExport(courses, grouped) {
+  const wb = window.XLSX.utils.book_new();
+  courses.forEach(m => {
+    const recs = (grouped[m.id]||[]).slice().sort((a,b) => a.classNum-b.classNum||new Date(a.ts)-new Date(b.ts));
+    const clsSet={};
+    recs.forEach(r => clsSet[r.classNum]=1);
+    const data = [
+      ['PLANILLA DE ASISTENCIA — '+m.name.toUpperCase()],
+      ['Código: '+m.id,'','Exportado: '+new Date().toLocaleString('es-AR')],
+      ['Total clases: '+Object.keys(clsSet).length,'','Total asistencias: '+recs.length],
+      [],['#','Clase','Fecha','Nombre y Apellido','Hora ingreso']
+    ];
+    if (recs.length) recs.forEach((r,i) => data.push([i+1,'Clase '+r.classNum,r.date||'',r.name,r.hora||'']));
+    else data.push(['','Sin registros','','','']);
+    const ws = window.XLSX.utils.aoa_to_sheet(data);
+    ws['!cols']=[{wch:5},{wch:10},{wch:14},{wch:35},{wch:14}];
+    ws['!merges']=[{s:{r:0,c:0},e:{r:0,c:4}}];
+    window.XLSX.utils.book_append_sheet(wb,ws,m.id.substring(0,31));
+  });
+  if (courses.length>1){
+    let all=[];
+    courses.forEach(m => all=all.concat(grouped[m.id]||[]));
+    const sum=[['RESUMEN GENERAL'],['Exportado: '+new Date().toLocaleString('es-AR')],[],['Curso','Código','Clases','Asistencias']];
+    courses.forEach(m => { const r=grouped[m.id]||[],cls={}; r.forEach(x=>cls[x.classNum]=1); sum.push([m.name,m.id,Object.keys(cls).length,r.length]); });
+    sum.push([],['TOTAL','','',all.length]);
+    const ws2=window.XLSX.utils.aoa_to_sheet(sum);
+    ws2['!cols']=[{wch:35},{wch:10},{wch:10},{wch:14}];
+    ws2['!merges']=[{s:{r:0,c:0},e:{r:0,c:3}}];
+    window.XLSX.utils.book_append_sheet(wb,ws2,'Resumen');
+  }
+  window.XLSX.writeFile(wb, courses.length===1?'asistencia_'+courses[0].id+'_'+today()+'.xlsx':'asistencia_todos_'+today()+'.xlsx');
+}
+
+// ════════════════════════════════════════════════
+// STUDENT
+// ════════════════════════════════════════════════
+function loadStudentForm(payload) {
+  try { studentCtx = JSON.parse(decodeURIComponent(atob(payload))); } catch(e) { showBad(); return; }
+  if (!studentCtx.cId || !studentCtx.num) { showBad(); return; }
+  document.getElementById('s-badge').textContent = studentCtx.cId;
+  document.getElementById('s-badge').style.background = studentCtx.cColor || '#333';
+  document.getElementById('s-name').textContent = studentCtx.cName || studentCtx.cId;
+  document.getElementById('s-classinfo').textContent = 'Clase '+studentCtx.num+' — '+(studentCtx.date||'Hoy');
+  document.getElementById('s-submit-btn').style.background = studentCtx.cColor || '#c8410a';
+  setTimeout(() => document.getElementById('s-input').focus(), 400);
+}
+
+window.submitStudent = async function() {
+  const nombre = document.getElementById('s-input').value.trim();
+  const inp = document.getElementById('s-input'), msg = document.getElementById('s-errmsg');
+  if (!nombre || nombre.split(/\s+/).length < 2) {
+    inp.classList.add('ferr'); msg.classList.add('on'); inp.focus(); return;
+  }
+  inp.classList.remove('ferr'); msg.classList.remove('on');
+  document.getElementById('student-error').classList.remove('on');
+
+  const btn = document.getElementById('s-submit-btn');
+  btn.textContent = 'Guardando...';
+  btn.disabled = true;
+
+  const hora = new Date().toLocaleTimeString('es-AR',{hour:'2-digit',minute:'2-digit'});
+  const newRecord = {
+    id: Date.now(),
+    courseId: studentCtx.cId,
+    classNum: studentCtx.num,
+    date: studentCtx.date || today(),
+    name: nombre,
+    hora,
+    ts: new Date().toISOString()
+  };
+
+  // Reintentos automáticos
+  let attempts = 0;
+  const maxAttempts = 3;
+
+  async function tryWrite() {
+    attempts++;
+    try {
+      // Verificar duplicado
+      const existing = await fbRead('records');
+      const records = existing ? Object.values(existing) : [];
+      const dup = records.find(r =>
+        r.courseId === studentCtx.cId &&
+        r.classNum === studentCtx.num &&
+        r.name.toLowerCase() === nombre.toLowerCase()
+      );
+      if (dup) { showOk(nombre, hora, true); return; }
+
+      await fbPush('records', newRecord);
+      await logEvent('success', 'Asistencia registrada', `${nombre} — ${studentCtx.cId} Clase ${studentCtx.num} — ${hora}`);
+      showOk(nombre, hora, false);
+    } catch(e) {
+      if (attempts < maxAttempts) {
+        // Esperar y reintentar
+        await new Promise(res => setTimeout(res, 1500 * attempts));
+        await tryWrite();
+      } else {
+        // Falló definitivamente — mostrar error VISIBLE
+        await logEvent('error', 'Error de registro', `${nombre} — ${studentCtx.cId} Clase ${studentCtx.num} — Falló después de ${maxAttempts} intentos`);
+        btn.textContent = '✓ Confirmar asistencia';
+        btn.disabled = false;
+        document.getElementById('student-error').classList.add('on');
+      }
+    }
+  }
+
+  await tryWrite();
+};
+
+window.retryStudent = function() {
+  document.getElementById('student-error').classList.remove('on');
+  window.submitStudent();
+};
+
+function showOk(nombre, hora, dup) {
+  document.getElementById('s-form-wrap').style.display = 'none';
+  document.getElementById('s-ok').classList.add('on');
+  document.getElementById('s-ok-msg').textContent = dup
+    ? nombre+', ya habías registrado tu presencia en esta clase.'
+    : nombre+', tu asistencia a la Clase '+studentCtx.num+' fue registrada a las '+hora+'.';
+}
+
+function showBad() {
+  document.getElementById('s-form-wrap').style.display = 'none';
+  document.getElementById('s-bad').classList.add('on');
+}
+
+document.addEventListener('keydown', e => {
+  if (e.key === 'Enter' && document.getElementById('page-student').classList.contains('on')) submitStudent();
+});
+
+// ════════════════════════════════════════════════
+// UTILS
+// ════════════════════════════════════════════════
+function today() { return new Date().toISOString().split('T')[0]; }
+
+function showToast(msg, type='ok') {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'toast on ' + type;
+  setTimeout(() => t.classList.remove('on'), 3500);
+}
+
+// Exponer funciones al scope global para onclick handlers
+window.renderTable = renderTable;
+window.renderLog = renderLog;
+</script>
+</body>
+</html>
